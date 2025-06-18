@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <title>Affelirt Video Generator</title>
+  <style>
+    body { font-family: sans-serif; padding: 30px; background: #f0f0f0; }
+    .container { background: white; padding: 20px; border-radius: 8px; max-width: 600px; margin: auto; box-shadow: 0 0 10px rgba(0,0,0,0.1); }
+    input, textarea, button { width: 100%; margin: 10px 0; padding: 10px; }
+    canvas { display: none; margin-top: 20px; width: 100%; }
+    video { width: 100%; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>📸 Produktvideo erstellen</h1>
+
+    <label>Bild hochladen:</label>
+    <input type="file" id="imageInput" accept="image/*" />
+
+    <label>Text für das Video:</label>
+    <textarea id="textInput" rows="3" placeholder="Z.B.: 'Diese Shapewear bringt dich in Form!'"></textarea>
+
+    <button onclick="createVideo()">🎬 Video erstellen</button>
+
+    <canvas id="canvas" width="640" height="360"></canvas>
+    <video id="finalVideo" controls></video>
+
+    <p>Affiliate-Link: <code>https://example.com/product?ref=AFFELIRT123</code></p>
+  </div>
+
+  <script>
+    async function createVideo() {
+      const file = document.getElementById('imageInput').files[0];
+      const text = document.getElementById('textInput').value;
+      const canvas = document.getElementById('canvas');
+      const ctx = canvas.getContext('2d');
+      const videoEl = document.getElementById('finalVideo');
+
+      if (!file || !text) return alert("Bitte Bild hochladen und Text eingeben.");
+
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+      await new Promise(resolve => img.onload = resolve);
+
+      const chunks = [];
+      const stream = canvas.captureStream(30);
+      const recorder = new MediaRecorder(stream);
+      recorder.ondataavailable = e => chunks.push(e.data);
+      recorder.onstop = () => {
+        const blob = new Blob(chunks, { type: "video/webm" });
+        videoEl.src = URL.createObjectURL(blob);
+        videoEl.style.display = 'block';
+      };
+
+      recorder.start();
+
+      let frames = 90;
+      for (let i = 0; i < frames; i++) {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        ctx.font = "30px Arial";
+        ctx.fillStyle = "white";
+        ctx.fillText(text, 30, canvas.height - 30);
+        await new Promise(r => setTimeout(r, 33));
+      }
+
+      recorder.stop();
+    }
+  </script>
+</body>
+</html> 
